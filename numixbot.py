@@ -85,29 +85,29 @@ async def on_ready():
 def max_idx(l):
     idx, biggest = (0, 0)
     cIdx = 0
-    for elem in l:
-        if elem > biggest:
+    for elem in l: # loop thru elements
+        if elem > biggest: # simple sorting
             biggest = elem
             idx = cIdx
     return idx
-def getAcc(id):
+def getAcc(id): # get the account by id
     file = json.load(open(numixAccFile, "r"))
     if id in file:
         return file[id]
     return "USER_NOT_FOUND"
-def createAcc(username):
+def createAcc(id): # create an account by id
     struct = accStructure
     file = json.load(open(numixAccFile, "r"))
-    file[username] = struct
+    file[id] = struct
     with open(numixAccFile, "w") as f:
         f.write(json.dumps(file))
-def readAccsFile():
+def readAccsFile(): # read accounts db file
     return json.load(open(numixAccFile, "r"))
-def getItem(name):
+def getItem(name): # get item
     if item not in name:
         return "ITEM_NOT_FOUND"
     return items[name]
-def saveChangesToAcc(id, changes):
+def saveChangesToAcc(id, changes): # save changes to account
     file = json.load(open(numixAccFile, "r"))
     file[id] = changes
     with open(numixAccFile, "w") as f:
@@ -117,7 +117,7 @@ def saveChangesToAcc(id, changes):
 # Help command
 
 @client.command(name= 'help')
-async def help(ctx):
+async def help(ctx): # help command
     embed = discord.Embed(
         title = 'Help',
         description = 'Help page',
@@ -178,13 +178,13 @@ async def kick(ctx, member : discord.Member, *, reason=None):
 
 @client.command()
 async def mute(ctx, member:discord.Member):
-    role = discord.utils.get(ctx.guild.roles, name="muted")
+    role = discord.utils.get(ctx.guild.roles, name="muted") # get muted role
     guild = ctx.guild
-    if role not in guild.roles:
-        perms = discord.Permissions(send_message=False, speak=False)
+    if role not in guild.roles: # if muted role doesn't exist
+        perms = discord.Permissions(send_message=False, speak=False) # make one
         await guild.create_role(name="muted", permutations=perms)
         await member.add_roles(role)
-        await ctx.send(f"{member} was muted.")
+        await ctx.send(f"{member} was muted.") # then mute
     else:
         await member.add_roles(role)
         await ctx.send(f"{member} was muted.")
@@ -192,7 +192,7 @@ async def mute(ctx, member:discord.Member):
 # Hedgehogs commands
 
 @client.command()
-async def hedgehog(ctx):
+async def hedgehog(ctx): # broken
     async with aiohttp.ClientSession().get(url="https://www.reddit.com/r/Hedgehogs/.json") as data:
         if data.status == 200:
             hedgehogs = await data.json(content_type=None)
@@ -212,7 +212,7 @@ async def hedgehog(ctx):
 # Memes commands
 
 @client.command()
-async def meme(ctx):
+async def meme(ctx): # broken
     async with aiohttp.ClientSession() as cs:
         async with cs.get("https://www.reddit.com/r/memes/.json") as r:
            memes = await r.json(content_type=None)
@@ -229,14 +229,14 @@ async def meme(ctx):
 
 @client.command()
 async def ping(ctx):
-    await ctx.send("pong, -0 ms")
+    await ctx.send("pong, -0 ms") # le funne ping
 
 
 
 # Poll command
 
 @client.command()
-async def poll(ctx,*,message):
+async def poll(ctx,*,message): # poll
     emb=discord.Embed(title=" POLL 📣", description=f"{message}", text=f"Poll requested by {ctx.author}")
     msg=await ctx.channel.send(embed=emb)
     await msg.add_reaction('⬆️')
