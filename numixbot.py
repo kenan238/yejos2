@@ -26,6 +26,8 @@ client = commands.Bot(command_prefix=">", help_command=None)
 numixAccFile = "SECRET_FOLDER/numixAccs.json" # path for the accounts db
 utilities = ["PHONE_UTILITY", "CAN_BE_EATEN", "CAN_FISH", "CAN_SHOOT_PEOPLE", "CAN_SHOOT_DEMONS"] # item utilities
 items_not_in_shop = ["demon_destroyer"] # items hidden in shop
+sold_items_by_users = [] # sold items by users
+sold_items_by_users_file = "SECRET_FOLDER/solditems.json"
 accStructure = { # how an account should be in the db
     "coins": 0,
     "inventory": [],
@@ -75,6 +77,9 @@ async def on_ready():
     with open(numixAccFile, "r+") as f:
         if f.read() == "": # fill db if empty
             f.write(json.dumps({}))
+    with open(sold_items_by_users_file, "r+") as f:
+        if f.read() == "": # fill db if empty
+            f.write(json.dumps({}))
         
 
 # async def do_request(url):
@@ -112,6 +117,23 @@ def saveChangesToAcc(id, changes): # save changes to account
     file[id] = changes
     with open(numixAccFile, "w") as f:
         f.write(json.dumps(file))
+def writeToJson(file, data):
+     with open(file, "w") as f:
+        f.write(json.dumps(data))
+def sellItem(user, item):
+    file = json.load(open(sold_items_by_users_file, "r"))
+    file[random.choice("qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM") * 20] = {"item": item, "user": user}
+    writeToJson(sold_items_by_users_file, file)
+def getSoldItems():
+    return json.load(open(sold_items_by_users_file, "r"))
+def removeSoldItem(userid, itemname):
+    file = getSoldItems()
+    file_loop = file.copy()
+    for item in file_loop:
+        if file_loop[item]["user"] == userid and file_loop[item]["item"] == itemname:
+            del file[item]
+    writeToJson(sold_items_by_users_file, file)
+
 # Commands
 
 # Help command
@@ -342,6 +364,9 @@ async def shop(ctx):
     for item in items: # loop thru items and add fiels
        if item not in items_not_in_shop:
            embed.add_field(name= f"*Name*: {item}", value=f'`Cost: {items[item]["price"]} NumixCoins`')
+    sitems = getSoldItems()
+    for item in sitems:
+        embed.add_field(name= f"*Name*: {sitems[item]['item']}", value=f'`Cost: {items[sitems[item]["item"]]["price"]} NumixCoins **SOLD BY `<@!{sitems[item]["user"]}> `USER_ID: {sitems[item]["user"]}**`')
     embed.set_thumbnail(url= 'https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fthefunnybeaver.com%2Fwp-content%2Fuploads%2F2018%2F06%2Fhedgehog-rainbow.jpg&f=1&nofb=1')
     await ctx.send(embed = embed)
 
@@ -362,6 +387,34 @@ async def buy(ctx, itemname): # buy command
             await ctx.send(f"You bought `{itemname}`, do `>stats` to see the item in your inventory")
     saveChangesToAcc(str(ctx.message.author.id), account) # write everything in
 
+# Buy item sold by user
+@client.command()
+async def buy_item_user(ctx, userid = None, itemname = None):
+    acc = getAcc(str(ctx.message.author.id))
+    if acc == "USER_NOT_FOUND":
+        await ctx.send("use `>stats` to create a numix account because you don't have one")
+    if userid == None or itemname == None:
+        await ctx.send("use the command as following: `>buy_item_user USER_ID NAME_OF_SOLD_ITEM`")
+    sitems = getSoldItems()
+    boughtSomething = False
+    if sitems != {}:
+        for item in sitems:
+            name = sitems[item]["item"]
+            user = sitems[item]["user"]
+            
+            if name == itemname and user == userid:
+                removeSoldItem(user, name)
+                acc["inventory"].append(name)
+                acc["coins"] -= int(items[name]["price"])
+                seller_acc = getAcc(userid)
+                seller_acc["coins"] += int(items[name]["price"])
+                
+                saveChangesToAcc(str(ctx.message.author.id), acc)
+                saveChangesToAcc(userid                    , seller_acc)
+                boughtSomething = True
+    if not boughtSomething:
+        await ctx.send("this user hasn't sold anything")
+        
 # Transfer Coins
 @client.command()
 async def transfer_coins(ctx, to: discord.Member = None, amt: int = None): # transfer coins
@@ -600,5 +653,13 @@ async def sell(ctx, item): # sell
     acc = getAcc(str(ctx.message.author.id))
     if acc == "USER_NOT_FOUND":
         await ctx.send("i can't find your numix account, do `>stats` so i make one for ya")
-    
+        return
+    if item not in acc["inventory"]:
+        await ctx.send("you don't have the item to sell")
+        return
+    # actually sell the item now
+    acc["inventory"].remove(item)
+    sellItem(str(ctx.message.author.id), item)
+    saveChangesToAcc(str(ctx.message.author.id), acc) # save
+    await ctx.send(f"you sold {item} for {items[item]['price']} NumixCoins.")
 client.run(open("SECRET_FOLDER/token.txt", "r").read())
