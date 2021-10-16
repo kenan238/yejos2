@@ -23,10 +23,10 @@ intents.members = True
 client_ = discord.Client(intents=intents)
 
 client = commands.Bot(command_prefix=">", help_command=None)
-numixAccFile = "SECRET_FOLDER/numixAccs.json"
-utilities = ["PHONE_UTILITY", "CAN_BE_EATEN", "CAN_FISH", "CAN_SHOOT_PEOPLE", "CAN_SHOOT_DEMONS"]
-items_not_in_shop = ["demon_destroyer"]
-accStructure = {
+numixAccFile = "SECRET_FOLDER/numixAccs.json" # path for the accounts db
+utilities = ["PHONE_UTILITY", "CAN_BE_EATEN", "CAN_FISH", "CAN_SHOOT_PEOPLE", "CAN_SHOOT_DEMONS"] # item utilities
+items_not_in_shop = ["demon_destroyer"] # items hidden in shop
+accStructure = { # how an account should be in the db
     "coins": 0,
     "inventory": [],
     "strength": 0,
@@ -38,7 +38,7 @@ foods = {
     "fish":  2,
     "le_fishe_au_chocolat": 5
 }
-items = {
+items = { # list of items
     "phone": {
         "utility": ["PHONE_UTILITY"],
         "price": 20
@@ -73,7 +73,7 @@ items = {
 async def on_ready():
     print("Logged in.")
     with open(numixAccFile, "r+") as f:
-        if f.read() == "":
+        if f.read() == "": # fill db if empty
             f.write(json.dumps({}))
         
 
