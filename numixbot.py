@@ -23,7 +23,7 @@ intents.members = True
 client_ = discord.Client(intents=intents)
 
 client = commands.Bot(command_prefix=">", help_command=None)
-numixAccFile = "numixAccs.json"
+numixAccFile = "SECRET_FOLDER/numixAccs.json"
 utilities = ["PHONE_UTILITY", "CAN_BE_EATEN", "CAN_FISH", "CAN_SHOOT_PEOPLE", "CAN_SHOOT_DEMONS"]
 items_not_in_shop = ["demon_destroyer"]
 accStructure = {
