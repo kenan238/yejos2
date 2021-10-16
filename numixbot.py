@@ -24,16 +24,19 @@ client_ = discord.Client(intents=intents)
 
 client = commands.Bot(command_prefix=">", help_command=None)
 numixAccFile = "numixAccs.json"
-utilities = ["PHONE_UTILITY", "CAN_BE_EATEN", "CAN_FISH"]
+utilities = ["PHONE_UTILITY", "CAN_BE_EATEN", "CAN_FISH", "CAN_SHOOT_PEOPLE", "CAN_SHOOT_DEMONS"]
+items_not_in_shop = ["demon_destroyer"]
 accStructure = {
     "coins": 0,
     "inventory": [],
-    "strength": 0
+    "strength": 0,
+    "stamina": 0
 }
 foods = {
-    #"FOODNAME": STRENGTHAMT
+    #"FOODNAME": STAMINA_AMT
     "apple": 1,
-    "fish":  2
+    "fish":  2,
+    "le_fishe_au_chocolat": 5
 }
 items = {
     "phone": {
@@ -51,6 +54,18 @@ items = {
     "fish": {
         "utility": ["CAN_BE_EATEN"],
         "price": 5
+    },
+    "shotgun": {
+        "utility": ["CAN_SHOOT_PEOPLE"],
+        "price": 16
+    },
+    "le_fishe_au_chocolat": {
+        "utility": ["CAN_BE_EATEN"],
+        "price": 4
+    },
+    "demon_destroyer": {
+        "utility": ["CAN_SHOOT_DEMONS"],
+        "price": 21,
     }
 }
 
@@ -67,6 +82,14 @@ async def on_ready():
 #     async with aiohttp.ClientSession().get(url=url) as data:
 #         return data
 
+def max_idx(l):
+    idx, biggest = (0, 0)
+    cIdx = 0
+    for elem in l:
+        if elem > biggest:
+            biggest = elem
+            idx = cIdx
+    return idx
 def getAcc(id):
     file = json.load(open(numixAccFile, "r"))
     if id in file:
@@ -78,6 +101,8 @@ def createAcc(username):
     file[username] = struct
     with open(numixAccFile, "w") as f:
         f.write(json.dumps(file))
+def readAccsFile():
+    return json.load(open(numixAccFile, "r"))
 def getItem(name):
     if item not in name:
         return "ITEM_NOT_FOUND"
@@ -276,6 +301,7 @@ async def stats(ctx, user: discord.Member = None):
     embed.add_field(name= 'Coins', value=f'`{account["coins"]}`')
     embed.add_field(name= 'Inventory', value=f'`{formattedInv}`')
     embed.add_field(name= 'Strength', value=f'`{account["strength"]}`')
+    embed.add_field(name= 'Stamina', value=f'`{account["stamina"]}`')
     embed.set_thumbnail(url= 'https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fthefunnybeaver.com%2Fwp-content%2Fuploads%2F2018%2F06%2Fhedgehog-rainbow.jpg&f=1&nofb=1')
     await ctx.send(embed = embed)
 
@@ -315,7 +341,8 @@ async def shop(ctx):
         color = discord.Color.red()
     )
     for item in items:
-        embed.add_field(name= f"*Name*: {item}", value=f'`Cost: {items[item]["price"]} NumixCoins`')
+       if item not in items_not_in_shop:
+           embed.add_field(name= f"*Name*: {item}", value=f'`Cost: {items[item]["price"]} NumixCoins`')
     embed.set_thumbnail(url= 'https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fthefunnybeaver.com%2Fwp-content%2Fuploads%2F2018%2F06%2Fhedgehog-rainbow.jpg&f=1&nofb=1')
     await ctx.send(embed = embed)
 
@@ -450,10 +477,10 @@ async def use_item(ctx, itemname, phone_arg: discord.Member = None):
             if itemname not in foods:
                 await ctx.send(f"Internal error: {itemname} has utility 'CAN_BE_EATEN' but is not marked in the 'foods' list.")
                 return
-            acc["strength"] += foods[itemname]
+            acc["stamina"] += foods[itemname]
             acc["inventory"].remove(itemname)
             saveChangesToAcc(str(ctx.message.author.id), acc)
-            await ctx.send(f"you ate {itemname} and got {foods[itemname]} strength")
+            await ctx.send(f"you ate {itemname} and got {foods[itemname]} stamina")
         if util == "CAN_FISH":
             fished = rnd.randint(0, 5)
             if fished == 5:
@@ -462,5 +489,116 @@ async def use_item(ctx, itemname, phone_arg: discord.Member = None):
                 saveChangesToAcc(str(ctx.message.author.id), acc)
             else:
                 await ctx.send("no fish ;-;")
+        if util == "CAN_SHOOT_PEOPLE":
+            if phone_arg == None:
+                await ctx.send("Use this command as `>use_item shotgun PING_THE_PERSON_YOU_WANT_TO_SHOOT`") 
+            if phone_arg != None:
+                slost = rnd.randint(1, 8)
+                l = getAcc(str(phone_arg.id))
+                if l == "USER_NOT_FOUND":
+                    await ctx.send("can't find the other user's numix account, make them do `>stats` so i will make them one")
+                    return
+                if l["strength"] < slost:
+                    await ctx.send("they got too low strength, they wont get negative strength")
+                    return
+                l["strength"] -= slost
+                saveChangesToAcc(str(phone_arg.id), l)
+                await ctx.send(f"Shot {phone_arg.name}, they lost {slost} strength")
+        if util == "CAN_SHOOT_DEMONS":
+            acc["coins"] += 9
+            saveChangesToAcc(str(ctx.message.author.id), acc)
+            await ctx.send("KILLED A DEMON +9 NUMIX COIN FOR HELPING SUSCIETY.")
+# Do sports
+@client.command()
+async def do_sports(ctx, lvl: str = None):
+    acc = getAcc(str(ctx.message.author.id))
+    if acc == "USER_NOT_FOUND":
+        await ctx.send("can't find your account, do `>stats`")
+        return
+    if lvl == None:
+        await ctx.send("What level of sports do you want to do (easy, medium, hard)? (20 seconds to answer)")
+        msg = await client.wait_for('message', check=lambda message: message.author == ctx.author)
+        if msg.content not in ["easy", "medium", "hard"]:
+            await ctx.send("bruh, that is not a sport level")
+            return
+        level = msg.content
+    else:
+        if lvl not in ["easy", "medium", "hard"]:
+            await ctx.send("bruh, that is not a sport level")
+            return
+        level = lvl
+    if level == "easy":
+        if acc["stamina"] < 3:
+            await ctx.send("not enough stamina, need 3 stamina")
+            return
+        stoadd = rnd.randint(1, 3)
+        acc["strength"] += stoadd
+        acc["stamina"] -= 3
+        saveChangesToAcc(str(ctx.message.author.id), acc)
+        await ctx.send(f"you did an easy session of sports, +{stoadd} strength, -3 stamina")
+        return
+    if level == "medium":
+        if acc["stamina"] < 5:
+            await ctx.send("not enough stamina, need 5 stamina")
+            return
+        stoadd = rnd.randint(5, 8)
+        acc["strength"] += stoadd
+        acc["stamina"] -= 5
+        saveChangesToAcc(str(ctx.message.author.id), acc)
+        await ctx.send(f"you did a medium session of sports, +{stoadd} strength, -5 stamina")
+        return
+    if level == "hard":
+        if acc["stamina"] < 8:
+            await ctx.send("not enough stamina, need 8 stamina")
+            return
+        stoadd = rnd.randint(9, 14)
+        acc["strength"] += stoadd
+        acc["stamina"] -= 8
+        saveChangesToAcc(str(ctx.message.author.id), acc)
+        await ctx.send(f"you did a hard session of sports, +{stoadd} strength, -8 stamina")
+        return
 
+# leaderboard
+@client.command()
+async def leaderboard(ctx):
+    embed = discord.Embed(
+        title = f'Leaderboard',
+        description = 'best users',
+        color = discord.Color.red()
+    )
+    accounts = []
+    depth = 4
+    costs = {}
+    accs = readAccsFile()
+    cIdx = 0
+
+    for acc in accs:
+        if cIdx >= depth:
+            break
+        cost = accs[acc]["strength"] + accs[acc]["stamina"] + accs[acc]["coins"]
+        costs[int(cost)] = (acc, accs[acc].copy())
+        cIdx += 1
+
+    for acc in costs.items():
+        accounts.append(acc)
+
+    bestUser = False
+    for i in range(depth):
+        add = ""
+        if not bestUser:
+            add = "🏆"
+            bestUser = True
+        acc__ = [s for s in accounts[i]]
+        print(acc__)
+        embed.add_field(name= f"{add}{acc__[1][0]}", value=f'(**<@!{acc__[1][0]}>**) Coins: {acc__[1][1]["coins"]} | Stamina: {acc__[1][1]["stamina"]} | Strength: {acc__[1][1]["strength"]}')
+    
+    embed.set_thumbnail(url= 'https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fthefunnybeaver.com%2Fwp-content%2Fuploads%2F2018%2F06%2Fhedgehog-rainbow.jpg&f=1&nofb=1')
+    await ctx.send(embed = embed)
+
+@client.command()
+async def sell(ctx, item):
+    acc = getAcc(str(ctx.message.author.id))
+    if acc == "USER_NOT_FOUND":
+        await ctx.send("i can't find your numix account, do `>stats` so i make one for ya")
+    
 client.run("ODk3MTQ4NzIwNjQ5NDY5OTg1.YWRc2w.6V4fYgO7sAWlm3xkOAgbTib_JtY")
