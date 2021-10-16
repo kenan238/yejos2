@@ -32,7 +32,11 @@ accStructure = { # how an account should be in the db
     "coins": 0,
     "inventory": [],
     "strength": 0,
-    "stamina": 0
+    "stamina": 0,
+    "job": ""
+}
+jobs = {
+    "shop": [5, 20]
 }
 foods = {
     #"FOODNAME": STAMINA_AMT
@@ -680,4 +684,9 @@ async def jobs_list(ctx):
         description = 'what job should you pick?',
         color = discord.Color.purple()
     )
+    # embed.add_field(name= f"", value=f'')
+    for job in jobs:
+        embed.add_field(name= f"{job}", value=f'Amount of numix coins: from {jobs[job][0]} to {jobs[job][1]}')
+    await ctx.send(embed=embed)
+    
 client.run(open("SECRET_FOLDER/token.txt", "r").read())
