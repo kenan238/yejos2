@@ -168,10 +168,9 @@ async def kick(ctx, member : discord.Member, *, reason=None):
     if "886937487912620032" in [y.id for y in member.roles]:
       try:
           await member.send("You have been kicked from the server.")
-          await member.kick(reason=reason)
       except:
           await ctx.send("The member has their DMS closed.")
-          await member.kick(reason=reason)
+      await member.kick(reason=reason)
     else:
         await ctx.send('You do not have the permissions required.')
 
