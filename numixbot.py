@@ -601,4 +601,4 @@ async def sell(ctx, item):
     if acc == "USER_NOT_FOUND":
         await ctx.send("i can't find your numix account, do `>stats` so i make one for ya")
     
-client.run("ODk3MTQ4NzIwNjQ5NDY5OTg1.YWRc2w.6V4fYgO7sAWlm3xkOAgbTib_JtY")
+client.run(open("SECRET_FOLDER/token.txt", "r").read())
