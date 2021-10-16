@@ -15,6 +15,4 @@ Nimic Tank _(Co-Leader)_
 #####
 SuspectAverage5 _(Developer)_
 #####
-yeshi (leatPinapples) _(Developer)_
-#####
 sarptekbas _(Developer)_
