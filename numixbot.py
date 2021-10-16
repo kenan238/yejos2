@@ -120,9 +120,9 @@ def saveChangesToAcc(id, changes): # save changes to account
 def writeToJson(file, data):
      with open(file, "w") as f:
         f.write(json.dumps(data))
-def sellItem(user, item):
+def sellItem(user, item, price):
     file = json.load(open(sold_items_by_users_file, "r"))
-    file[random.choice("qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM") * 20] = {"item": item, "user": user}
+    file[random.choice("qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM") * 20] = {"item": item, "user": user, "price": price}
     writeToJson(sold_items_by_users_file, file)
 def getSoldItems():
     return json.load(open(sold_items_by_users_file, "r"))
@@ -366,7 +366,7 @@ async def shop(ctx):
            embed.add_field(name= f"*Name*: {item}", value=f'`Cost: {items[item]["price"]} NumixCoins`')
     sitems = getSoldItems()
     for item in sitems:
-        embed.add_field(name= f"*Name*: {sitems[item]['item']}", value=f'`Cost: {items[sitems[item]["item"]]["price"]} NumixCoins **SOLD BY `<@!{sitems[item]["user"]}> `USER_ID: {sitems[item]["user"]}**`')
+        embed.add_field(name= f"*Name*: {sitems[item]['item']}", value=f'`Cost: {sitems[item]["price"]} NumixCoins **SOLD BY `<@!{sitems[item]["user"]}> `USER_ID: {sitems[item]["user"]}**`')
     embed.set_thumbnail(url= 'https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fthefunnybeaver.com%2Fwp-content%2Fuploads%2F2018%2F06%2Fhedgehog-rainbow.jpg&f=1&nofb=1')
     await ctx.send(embed = embed)
 
@@ -401,13 +401,17 @@ async def buy_item_user(ctx, userid = None, itemname = None):
         for item in sitems:
             name = sitems[item]["item"]
             user = sitems[item]["user"]
+            price = int(sitems[item]["price"])
             
             if name == itemname and user == userid:
                 removeSoldItem(user, name)
                 acc["inventory"].append(name)
-                acc["coins"] -= int(items[name]["price"])
+                if acc["coins"] < price:
+                    await ctx.send("you don't have enough money to buy this")
+                    return
+                acc["coins"] -= price
                 seller_acc = getAcc(userid)
-                seller_acc["coins"] += int(items[name]["price"])
+                seller_acc["coins"] += price
                 
                 saveChangesToAcc(str(ctx.message.author.id), acc)
                 saveChangesToAcc(userid                    , seller_acc)
@@ -613,7 +617,7 @@ async def do_sports(ctx, lvl: str = None): # do sports
 
 # leaderboard
 @client.command()
-async def leaderboard(ctx):
+async def leaderboard(ctx, depth_arg = None):
     embed = discord.Embed(
         title = f'Leaderboard',
         description = 'best users',
@@ -621,6 +625,8 @@ async def leaderboard(ctx):
     )
     accounts = [] # accounts sorted from best to worse (LEN = DEPTH)
     depth = 4
+    if depth_arg != None:
+        depth = int(depth_arg)
     costs = {} # accounts with cost
     accs = readAccsFile()
     cIdx = 0
@@ -632,8 +638,10 @@ async def leaderboard(ctx):
         costs[int(cost)] = (acc, accs[acc].copy())
         cIdx += 1
 
-    for acc in costs.items(): # sort
-        accounts.append(acc)
+    for acc in sorted(costs.keys()): # sort
+        accounts.append((costs[acc], acc))
+    
+    accounts.reverse()
 
     bestUser = False
     for i in range(depth): # show
@@ -641,15 +649,16 @@ async def leaderboard(ctx):
         if not bestUser:
             add = "🏆"
             bestUser = True
-        acc__ = [s for s in accounts[i]]
-        print(acc__)
-        embed.add_field(name= f"{add}{acc__[1][0]}", value=f'(**<@!{acc__[1][0]}>**) Coins: {acc__[1][1]["coins"]} | Stamina: {acc__[1][1]["stamina"]} | Strength: {acc__[1][1]["strength"]}')
+        acc_ = [s for s in accounts[i]]
+        acc__ = acc_[0]
+        embed.add_field(name= f"{add}{acc__[0]}", value=f'(**<@!{acc__[0]}>**) Coins: {acc__[1]["coins"]} | Stamina: {acc__[1]["stamina"]} | Strength: {acc__[1]["strength"]}')
     
     embed.set_thumbnail(url= 'https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fthefunnybeaver.com%2Fwp-content%2Fuploads%2F2018%2F06%2Fhedgehog-rainbow.jpg&f=1&nofb=1')
     await ctx.send(embed = embed)
 
+# sell
 @client.command()
-async def sell(ctx, item): # sell
+async def sell(ctx, item, price): # sell
     acc = getAcc(str(ctx.message.author.id))
     if acc == "USER_NOT_FOUND":
         await ctx.send("i can't find your numix account, do `>stats` so i make one for ya")
@@ -659,7 +668,16 @@ async def sell(ctx, item): # sell
         return
     # actually sell the item now
     acc["inventory"].remove(item)
-    sellItem(str(ctx.message.author.id), item)
+    sellItem(str(ctx.message.author.id), item, price)
     saveChangesToAcc(str(ctx.message.author.id), acc) # save
-    await ctx.send(f"you sold {item} for {items[item]['price']} NumixCoins.")
+    await ctx.send(f"you sold {item} for {price} NumixCoins.")
+
+# jobs list
+@client.command()
+async def jobs_list(ctx):
+    embed = discord.Embed(
+        title = f'Jobs - List',
+        description = 'what job should you pick?',
+        color = discord.Color.purple()
+    )
 client.run(open("SECRET_FOLDER/token.txt", "r").read())
