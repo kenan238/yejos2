@@ -247,17 +247,17 @@ async def poll(ctx,*,message): # poll
 # Errors
 
 @client.event
-async def on_command_error(ctx,error):
-    if isinstance(error,commands.MissingPermissions):
+async def on_command_error(ctx,error): # command handling
+    if isinstance(error,commands.MissingPermissions): # for missing perms
         await ctx.send("You don't have permissions to do that.")
         await ctx.message.delete()
-    elif isinstance(error,commands.MissingRequiredArgument):
+    elif isinstance(error,commands.MissingRequiredArgument): # missing arguments
         await ctx.send("Please enter the required argument.")
         await ctx.message.delete()
-    elif isinstance(error,commands.MemberNotFound):
+    elif isinstance(error,commands.MemberNotFound): # unexistant member
         await ctx.send("This member do not exist.")
         await ctx.message.delete()
-    elif isinstance(error, commands.CommandOnCooldown):
+    elif isinstance(error, commands.CommandOnCooldown): # cooldown handling
             em = discord.Embed(title=f"take a chill pill",description=f"Try again in {error.retry_after:.2f}s. This command is on cooldown.", color=discord.Color.red())
             await ctx.send(embed=em)
     else:
@@ -265,7 +265,7 @@ async def on_command_error(ctx,error):
 
 # Say command
 @client.command()
-async def say(ctx, *, msg):
+async def say(ctx, *, msg): # say command
     try:
         await ctx.message.delete()
     except:
@@ -275,51 +275,51 @@ async def say(ctx, *, msg):
 # spoopy
 
 @client.command()
-async def spoopy(ctx):
+async def spoopy(ctx): # SPOOPY SCARY SKELETON
     await ctx.send("https://cdn.discordapp.com/attachments/885888076260454461/897169777045430303/unknown.png")
 
 # Numix Acc stats
 
 @client.command()
-async def stats(ctx, user: discord.Member = None):
+async def stats(ctx, user: discord.Member = None): # stats command
     if user == None:
         user = ctx.message.author
-    account = getAcc(str(user.id))
+    account = getAcc(str(user.id)) # get user
     if account == "USER_NOT_FOUND":
         await ctx.send("I can't find your numix account, ima create one real quick...")
         createAcc(str(user.id))
-    embed = discord.Embed(
+    embed = discord.Embed( # make embed
         title = f'Account Stats - {user.name}',
         description = 'Stat page',
         color = discord.Color.green()
     )
     formattedInv = ""
     inv = account["inventory"]
-    for item in inv:
+    for item in inv: # inventory list to string
         formattedInv += f"{item}\n"
-    embed.add_field(name= 'Coins', value=f'`{account["coins"]}`')
+    embed.add_field(name= 'Coins', value=f'`{account["coins"]}`') # add fiels
     embed.add_field(name= 'Inventory', value=f'`{formattedInv}`')
     embed.add_field(name= 'Strength', value=f'`{account["strength"]}`')
     embed.add_field(name= 'Stamina', value=f'`{account["stamina"]}`')
-    embed.set_thumbnail(url= 'https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fthefunnybeaver.com%2Fwp-content%2Fuploads%2F2018%2F06%2Fhedgehog-rainbow.jpg&f=1&nofb=1')
-    await ctx.send(embed = embed)
+    embed.set_thumbnail(url= 'https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fthefunnybeaver.com%2Fwp-content%2Fuploads%2F2018%2F06%2Fhedgehog-rainbow.jpg&f=1&nofb=1') # set le funne hedgehog image
+    await ctx.send(embed = embed) # send
 
 # Fix database
 @client.command()
-async def fixDb(ctx):
+async def fixDb(ctx): # fix db
     msg = await ctx.send("Beggining to fix bad stuff inside db...")
     db = json.load(open(numixAccFile, "r"))
     fixedTotal = 0
-    for key in db:
+    for key in db: # loop thru keys
         acc = db[key]
-        for s in accStructure:
+        for s in accStructure: # fix missing keys
             if s not in acc:
                 acc[s] = accStructure[s]
                 fixedTotal += 1
                 await msg.edit(content=f"Fixed {fixedTotal} bad stuff, the {s} key was missing. Continuing...")
                 print(f"Fixed {fixedTotal} bad stuff, the {s} key was missing. Continuing...")
         acc2 = acc.copy()
-        for aitm in acc:
+        for aitm in acc: # fix invalid keys
             if aitm not in accStructure:
                 del acc2[aitm]
                 fixedTotal += 1
@@ -328,7 +328,7 @@ async def fixDb(ctx):
         db[key] = acc2.copy()
         del acc2
     with open(numixAccFile, "w") as f:
-        f.write(json.dumps(db))
+        f.write(json.dumps(db)) # write to file
     await ctx.send(f"End. Fixed {fixedTotal} bad stuff.")
 
 # Shop
@@ -339,7 +339,7 @@ async def shop(ctx):
         description = 'let\'s buy stuff',
         color = discord.Color.red()
     )
-    for item in items:
+    for item in items: # loop thru items and add fiels
        if item not in items_not_in_shop:
            embed.add_field(name= f"*Name*: {item}", value=f'`Cost: {items[item]["price"]} NumixCoins`')
     embed.set_thumbnail(url= 'https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fthefunnybeaver.com%2Fwp-content%2Fuploads%2F2018%2F06%2Fhedgehog-rainbow.jpg&f=1&nofb=1')
@@ -347,24 +347,24 @@ async def shop(ctx):
 
 # Buy
 @client.command()
-async def buy(ctx, itemname):
+async def buy(ctx, itemname): # buy command
     if itemname not in items:
         await ctx.send("that item doesnt exist bruh")
     account = getAcc(str(ctx.message.author.id))
     if account == "USER_NOT_FOUND":
         await ctx.send("use `>stats` to create a numix account because you don't have one")
     else:
-        if account["coins"] < items[itemname]["price"]:
+        if account["coins"] < items[itemname]["price"]: # if too poor
             await ctx.send("you don't have enough money to buy this item.")
         else:
-            account["coins"] -= items[itemname]["price"]
-            account["inventory"].append(itemname)
+            account["coins"] -= items[itemname]["price"] # remove price from coins
+            account["inventory"].append(itemname) # add item to inv
             await ctx.send(f"You bought `{itemname}`, do `>stats` to see the item in your inventory")
-    saveChangesToAcc(str(ctx.message.author.id), account)
+    saveChangesToAcc(str(ctx.message.author.id), account) # write everything in
 
 # Transfer Coins
 @client.command()
-async def transfer_coins(ctx, to: discord.Member = None, amt: int = None):
+async def transfer_coins(ctx, to: discord.Member = None, amt: int = None): # transfer coins
     if to == None:
         await ctx.send("I need to transfer some coins to someone, can't transfer to no one")
         return
@@ -373,44 +373,44 @@ async def transfer_coins(ctx, to: discord.Member = None, amt: int = None):
         return
     user  = getAcc(str(ctx.message.author.id))
     to_   = getAcc(str(to.id))
-    if user == "USER_NOT_FOUND":
+    if user == "USER_NOT_FOUND": # can't find user 
         await ctx.send("can't find your account, do `>stats` so i can create one for u")
         return
-    if to_  == "USER_NOT_FOUND":
+    if to_  == "USER_NOT_FOUND": # can't find user 2.0
         await ctx.send(f"can't find the account of {to.name}, make them do `>stats` so i will make them an account")
         return
-    if user["coins"] < amt:
+    if user["coins"] < amt: # not enough coins
         await ctx.send("you don't have enough coins")
         return
-    user["coins"] -= amt
+    user["coins"] -= amt # do transfer
     to_ ["coins"] += amt
-    saveChangesToAcc(str(ctx.message.author.id), user)
+    saveChangesToAcc(str(ctx.message.author.id), user) # save
     saveChangesToAcc(str(to.id)                , to_ )
     await ctx.send(f"Transfered {amt} coin(s) to {to.name}")
 
 # Jackpot
 @commands.cooldown(1, 30, commands.BucketType.user)
 @client.command()
-async def jackpot(ctx):
+async def jackpot(ctx): # jackpot
     acc = getAcc(str(ctx.message.author.id))
     if acc == "USER_NOT_FOUND":
         await ctx.send("can't find your account, do `>stats`")
         return 
     await ctx.send("🎲 Rolling...")
-    rolls = ["😦", "😕", "🙂", "😳", "💰"]
+    rolls = ["😦", "😕", "🙂", "😳", "💰"] # emojis
     rolls_cost = {
         "😦": 2, 
         "😕": 6, 
         "🙂": 20, 
         "😳": 40, 
         "💰": 60
-    }
+    } # how much luck every emoji is
     rolled = [
         rnd.choice(rolls), 
         rnd.choice(rolls), 
         rnd.choice(rolls)
-    ]
-    await ctx.send(f"{rolled[0]} `?` `?`")
+    ] # roll
+    await ctx.send(f"{rolled[0]} `?` `?`") # display roll
     time.sleep(0.1)
     await ctx.send(f"{rolled[0]} {rolled[1]} `?`")
     time.sleep(0.1)
@@ -421,6 +421,7 @@ async def jackpot(ctx):
     
     luck = rolls_cost[rolled[0]] + rolls_cost[rolled[1]] + rolls_cost[rolled[2]]
     chose = False
+    # some questionable code for giving amounts
     if luck <= 8 and not chose:
         amt = 2
         chose = True
@@ -443,8 +444,8 @@ async def jackpot(ctx):
         amt = 100
         chose = True
     
-    acc["coins"] += amt
-    saveChangesToAcc(str(ctx.message.author.id), acc)
+    acc["coins"] += amt # add coins
+    saveChangesToAcc(str(ctx.message.author.id), acc) # save
     await ctx.send(f"You won {amt} coins")
 
 # Use item
