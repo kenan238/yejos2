@@ -450,21 +450,21 @@ async def jackpot(ctx): # jackpot
 
 # Use item
 @client.command()
-async def use_item(ctx, itemname, phone_arg: discord.Member = None):
+async def use_item(ctx, itemname, phone_arg: discord.Member = None): # use item
     acc = getAcc(str(ctx.message.author.id))
-    if acc == "USER_NOT_FOUND":
+    if acc == "USER_NOT_FOUND": # if user does not exist
         await ctx.send("can't find your account, do `>stats`")
         return 
-    if itemname not in acc["inventory"]:
+    if itemname not in acc["inventory"]: # if item is not in inventory
         await ctx.send("you don't have this item")
         return
     utility = items[itemname]["utility"]
-    for util in utility:
+    for util in utility: # handle error
         if util not in utilities:
             await ctx.send(f"Internal Error: {util} is not a valid utility")
             return
     await ctx.send(f"Using {itemname}.")
-    for util in utility:
+    for util in utility: # start using
         if util == "PHONE_UTILITY":
             if phone_arg == None:
                 await ctx.send("Provided the required argument: `>use_item itemname PERSON_TO_TEXT`")
@@ -472,16 +472,16 @@ async def use_item(ctx, itemname, phone_arg: discord.Member = None):
             dm = await phone_arg.create_dm()
             await ctx.send("What message do you want to send? (You have 20 seconds)")
             msg = await client.wait_for('message', check=lambda message: message.author == ctx.author)
-            await dm.send(f"**Sent from {ctx.message.author.name}'s phone: ** {msg.content}")
+            await dm.send(f"**Sent from {ctx.message.author.name}'s phone: ** {msg.content}") # send message
         if util == "CAN_BE_EATEN":
             if itemname not in foods:
                 await ctx.send(f"Internal error: {itemname} has utility 'CAN_BE_EATEN' but is not marked in the 'foods' list.")
                 return
-            acc["stamina"] += foods[itemname]
+            acc["stamina"] += foods[itemname] # eat
             acc["inventory"].remove(itemname)
             saveChangesToAcc(str(ctx.message.author.id), acc)
             await ctx.send(f"you ate {itemname} and got {foods[itemname]} stamina")
-        if util == "CAN_FISH":
+        if util == "CAN_FISH": # fish 
             fished = rnd.randint(0, 5)
             if fished == 5:
                 await ctx.send("Got a fish!")
@@ -489,7 +489,7 @@ async def use_item(ctx, itemname, phone_arg: discord.Member = None):
                 saveChangesToAcc(str(ctx.message.author.id), acc)
             else:
                 await ctx.send("no fish ;-;")
-        if util == "CAN_SHOOT_PEOPLE":
+        if util == "CAN_SHOOT_PEOPLE": # o-o
             if phone_arg == None:
                 await ctx.send("Use this command as `>use_item shotgun PING_THE_PERSON_YOU_WANT_TO_SHOOT`") 
             if phone_arg != None:
@@ -504,13 +504,13 @@ async def use_item(ctx, itemname, phone_arg: discord.Member = None):
                 l["strength"] -= slost
                 saveChangesToAcc(str(phone_arg.id), l)
                 await ctx.send(f"Shot {phone_arg.name}, they lost {slost} strength")
-        if util == "CAN_SHOOT_DEMONS":
+        if util == "CAN_SHOOT_DEMONS": # o-o
             acc["coins"] += 9
             saveChangesToAcc(str(ctx.message.author.id), acc)
             await ctx.send("KILLED A DEMON +9 NUMIX COIN FOR HELPING SUSCIETY.")
 # Do sports
 @client.command()
-async def do_sports(ctx, lvl: str = None):
+async def do_sports(ctx, lvl: str = None): # do sports
     acc = getAcc(str(ctx.message.author.id))
     if acc == "USER_NOT_FOUND":
         await ctx.send("can't find your account, do `>stats`")
@@ -518,7 +518,7 @@ async def do_sports(ctx, lvl: str = None):
     if lvl == None:
         await ctx.send("What level of sports do you want to do (easy, medium, hard)? (20 seconds to answer)")
         msg = await client.wait_for('message', check=lambda message: message.author == ctx.author)
-        if msg.content not in ["easy", "medium", "hard"]:
+        if msg.content not in ["easy", "medium", "hard"]: # check if valid level
             await ctx.send("bruh, that is not a sport level")
             return
         level = msg.content
@@ -528,12 +528,12 @@ async def do_sports(ctx, lvl: str = None):
             return
         level = lvl
     if level == "easy":
-        if acc["stamina"] < 3:
+        if acc["stamina"] < 3: # check stamina
             await ctx.send("not enough stamina, need 3 stamina")
             return
         stoadd = rnd.randint(1, 3)
-        acc["strength"] += stoadd
-        acc["stamina"] -= 3
+        acc["strength"] += stoadd # add strength
+        acc["stamina"] -= 3 # remove stamina
         saveChangesToAcc(str(ctx.message.author.id), acc)
         await ctx.send(f"you did an easy session of sports, +{stoadd} strength, -3 stamina")
         return
@@ -566,24 +566,24 @@ async def leaderboard(ctx):
         description = 'best users',
         color = discord.Color.red()
     )
-    accounts = []
+    accounts = [] # accounts sorted from best to worse (LEN = DEPTH)
     depth = 4
-    costs = {}
+    costs = {} # accounts with cost
     accs = readAccsFile()
     cIdx = 0
 
-    for acc in accs:
+    for acc in accs: # fill in costs
         if cIdx >= depth:
             break
         cost = accs[acc]["strength"] + accs[acc]["stamina"] + accs[acc]["coins"]
         costs[int(cost)] = (acc, accs[acc].copy())
         cIdx += 1
 
-    for acc in costs.items():
+    for acc in costs.items(): # sort
         accounts.append(acc)
 
     bestUser = False
-    for i in range(depth):
+    for i in range(depth): # show
         add = ""
         if not bestUser:
             add = "🏆"
@@ -596,7 +596,7 @@ async def leaderboard(ctx):
     await ctx.send(embed = embed)
 
 @client.command()
-async def sell(ctx, item):
+async def sell(ctx, item): # sell
     acc = getAcc(str(ctx.message.author.id))
     if acc == "USER_NOT_FOUND":
         await ctx.send("i can't find your numix account, do `>stats` so i make one for ya")
