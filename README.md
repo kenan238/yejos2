@@ -12,3 +12,7 @@ Numix _(Owner)_
 kenan238 _(Owner)_
 #####
 Nimic Tank _(Co-Leader)_
+#####
+SuspectAverage5 _(Developer)_
+#####
+yeshi (leatPinapples) _(Developer)_
