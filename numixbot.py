@@ -17,6 +17,9 @@ import asyncio as asio
 import json
 import time
 from discord.ext.commands import cooldown, BucketType
+import atexit
+import asyncio
+import sys
 
 intents = discord.Intents.default()
 intents.members = True
@@ -75,9 +78,50 @@ items = { # list of items
     }
 }
 
+async def async_on_exit():
+    channel = client.get_channel(899210171321028649)
+    embed = get_status_embed(1, False)
+    await channel.purge(limit=5)
+    await channel.send(embed = embed)
+    await client.change_presence(status=discord.Status.offline)
+
+# def on_exit():
+#     asyncio.run(async_on_exit())
+
+# atexit.register(on_exit)
+
+def get_status_embed(status, maintenance):
+    embed = discord.Embed(
+        title = f'Status',
+        description = 'what da bot doin?',
+        color = discord.Color.purple()
+    )
+    msg = None
+    if status == 0:
+        status = ":green_circle: Online"
+    elif status == 1:
+        status = ":red_circle: Offline"
+
+    if not maintenance:
+        maintenance = ":no_entry_sign:"
+    else:
+        maintenance = ":white_check_mark:"
+
+    embed.add_field(name="Status", value=f"{status}")
+    embed.add_field(name="Maintenance", value=f"{maintenance}")  
+    return embed
+
 @client.event
 async def on_ready():
     print("Logged in.")
+    await client.change_presence(status=discord.Status.online)
+
+    # Display status
+    channel = client.get_channel(899210171321028649)
+    embed = get_status_embed(0, False)
+    await channel.purge(limit=5)
+    await channel.send(embed = embed)
+
     with open(numixAccFile, "r+") as f:
         if f.read() == "": # fill db if empty
             f.write(json.dumps({}))
@@ -688,5 +732,13 @@ async def jobs_list(ctx):
     for job in jobs:
         embed.add_field(name= f"{job}", value=f'Amount of numix coins: from {jobs[job][0]} to {jobs[job][1]}')
     await ctx.send(embed=embed)
-    
+
+@client.command()
+async def safe_exit(ctx):
+    await ctx.send("Begin of safe_exit")
+    await ctx.send("Running async_on_exit routine")
+    await async_on_exit()
+    await ctx.send("change da world, goodbye")
+    await client.close()
+
 client.run(open("SECRET_FOLDER/token.txt", "r").read())
