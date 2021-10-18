@@ -194,7 +194,7 @@ async def help(ctx): # help command
         color = discord.Color.green()
     )
     embed.add_field(name= 'General', value='`hedgehog`')
-    embed.add_field(name= 'Fun', value= '`meme` ' '`poll` ' '`ping` `say` `spoopy` `stats` `transfer_coins` `shop` `buy` `jackpot` `use_item`', inline=False)
+    embed.add_field(name= 'Fun', value= '`meme` ' '`poll` ' '`ping` `say` `spoopy` `stats` `transfer_coins` `shop` `buy` `jackpot` `use_item` `apply_for_job` `work` `jobs_list` `buy_item_user` `leaderboard`', inline=False)
     embed.add_field(name= 'Moderation', value= '`ban` ' '`kick` ' '`lockdown` ' '`unlock`', inline=False)
     embed.set_image(url= 'https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fthefunnybeaver.com%2Fwp-content%2Fuploads%2F2018%2F06%2Fcute-hedgehog-bath.jpg&f=1&nofb=1')
     embed.set_thumbnail(url= 'https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fthefunnybeaver.com%2Fwp-content%2Fuploads%2F2018%2F06%2Fhedgehog-rainbow.jpg&f=1&nofb=1')
@@ -371,6 +371,7 @@ async def stats(ctx, user: discord.Member = None): # stats command
     embed.add_field(name= 'Inventory', value=f'`{formattedInv}`')
     embed.add_field(name= 'Strength', value=f'`{account["strength"]}`')
     embed.add_field(name= 'Stamina', value=f'`{account["stamina"]}`')
+    embed.add_field(name= 'Job', value=f'`{account["job"]}`')
     embed.set_thumbnail(url= 'https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fthefunnybeaver.com%2Fwp-content%2Fuploads%2F2018%2F06%2Fhedgehog-rainbow.jpg&f=1&nofb=1') # set le funne hedgehog image
     await ctx.send(embed = embed) # send
 
@@ -395,6 +396,13 @@ async def fixDb(ctx): # fix db
                 fixedTotal += 1
                 await msg.edit(content=f"Fixed {fixedTotal} bad stuff, the {aitm} key was an invalid key. Continuing...")
                 print(f"Fixed {fixedTotal} bad stuff, the {aitm} key was an invalid key. Continuing...")
+        if acc["job"] not in jobs and acc["job"] != "":
+            acc["job"] = accStructure["job"]
+            await msg.edit(content=f"Fixed {fixedTotal} bad stuff, <@!{key}>'s account had an invalid value as a job (sry for ping), Continuing...")
+            print(f"Fixed {fixedTotal} bad stuff, <@!{key}>'s account had an invalid value as a job (sry for ping), Continuing...")
+        if int(acc["strength"]) < 0:
+            await msg.edit(f"Fixed {fixedTotal} bad stuff, k k ik this is funny but <@!{key}>'s account had negative strength ultimate stick (sry for ping)")
+
         db[key] = acc2.copy()
         del acc2
     with open(numixAccFile, "w") as f:
@@ -725,13 +733,110 @@ async def sell(ctx, item, price): # sell
 async def jobs_list(ctx):
     embed = discord.Embed(
         title = f'Jobs - List',
-        description = 'what job should you pick?',
+        description = 'what job should you pick? Apply for a job using: `>apply_for_job jobname` (YOU CAN ONLY HAVE 1 JOB AT A TIME)',
         color = discord.Color.purple()
     )
     # embed.add_field(name= f"", value=f'')
     for job in jobs:
         embed.add_field(name= f"{job}", value=f'Amount of numix coins: from {jobs[job][0]} to {jobs[job][1]}')
+    embed.set_image(url="https://cdn.discordapp.com/attachments/899208903051591700/899666417262166026/hedgehog_going_to_work.png")
     await ctx.send(embed=embed)
+
+# job
+@client.command()
+async def apply_for_job(ctx, jobname, force=None):
+    acc = getAcc(str(ctx.message.author.id))
+    if acc == "USER_NOT_FOUND":
+        await ctx.send("can't find your account, make one using `>stats`")
+        return
+    if acc["job"] != "" and force != "/force":
+        await ctx.send("you already have a job, to overwrite it, do `>apply_for_job jobname /force`")
+        return
+    if jobname not in jobs:
+        await ctx.send(f"{jobname} might be a job irl but it isn't in my place.")
+        return
+    acc["job"] = jobname
+    saveChangesToAcc(str(ctx.message.author.id), acc)
+    await ctx.send(f"You have applied for {jobname}, use `>work` to start working and doin business :moneybag:")
+
+# work
+@client.command()
+async def work(ctx):
+    acc = getAcc(str(ctx.message.author.id))
+    if acc == "USER_NOT_FOUND":
+        await ctx.send("can't find your account, make one using `>stats`")
+        return
+    if acc["job"] == "":
+        await ctx.send("you got no job, get one by running `>jobs_list` and `>apply_for_job jobname`")
+    if acc["job"] not in jobs and acc["job"] != "":
+        await ctx.send(f"Internal error: 'job' key in account is invalid, cannot find {acc['job']} in jobs list (you can do `>fixDb` to fix this)")
+        return
+    if acc["job"] == "shop":
+        await ctx.send("Working in shop")
+        time.sleep(0.1)
+        await ctx.send("You can work in shop with actual users buying your stuff, you want that? (20 seconds to answer) (1=Ye 2=No i dont want to wait 5 years) (Choose a number)")
+        msg = await client.wait_for('message', check=lambda message: message.author == ctx.author)
+        msg = msg.content
+        if msg == "1":
+            await ctx.send("Sell an item manually or pick from list? (1=Manually 2=Pick from list) (20 seconds to answer)")
+            option = await client.wait_for('message', check=lambda message: message.author == ctx.author)
+            option = option.content
+            if option == "1":
+                await ctx.send("Run `>sell itemname price`.")
+            elif option == "2":
+                items_list = [rnd.choice(
+                    [s for s in items.keys()]
+                ) for i in range(rnd.randint(2, 5))]
+
+                prices = [rnd.randint(1, 30) for i in range(len(items_list))]
+                list_str = ""
+                for i in range(len(items_list)):
+                    list_str += f"{i}. Sell {items_list[i]} for {prices[i]} NCOINS | "
+                await ctx.send(f"List: {list_str}")
+                await ctx.send(f"Chose using the option number you want")
+                await ctx.send("(20 seconds to answer)")
+                tosell = await client.wait_for('message', check=lambda message: message.author == ctx.author)
+                tosell = int(tosell.content)
+                if tosell >= len(items_list):
+                    await ctx.send("bruh, your number is not in the list")
+                else:
+                    await ctx.send(f"Alright, you want to sell {items_list[tosell]} for {prices[tosell]} NCOINS")
+                    await sell(ctx, items_list[tosell], prices[tosell])
+                    await ctx.send("sold")
+        if msg == "2":
+            amt = rnd.randint(jobs["shop"][0], jobs["shop"][1])
+            acc["coins"] += amt
+            saveChangesToAcc(str(ctx.message.author.id), acc)
+            await ctx.send(f"you sold an item for a customer, you just got {amt} numixcoins")
+
+# quit job
+@client.command()
+async def quit_job(ctx):
+    acc = getAcc(str(ctx.message.author.id))
+    if acc == "USER_NOT_FOUND":
+        await ctx.send("can't find your account, make one using `>stats`")
+        return
+    acc["job"] = ""
+    saveChangesToAcc(str(ctx.message.author.id), acc)
+    await ctx.send("you quit your job")
+
+# batchquest
+@client.command()
+async def batchquest(ctx, arg=None):
+    args = ["--try_to_run", "--latest_download"]
+    if arg not in args and arg != None:
+        await ctx.send("WARNING: that argument doesnt exist")
+    server = "https://discord.gg/DyQGuanpbT"
+    embed = discord.Embed(
+        title = f'BatchQuest - Game Made In Batch',
+        description = 'didn\'t even know this was possible :flushed:',
+        color = 0xeeffee
+    )
+    embed.add_field(name="Server", value=f"{server}")
+    embed.add_field(name="Latest Fetched Download", value=f"https://cdn.discordapp.com/attachments/898610725772218378/899308389245546526/BatchQuest.zip")
+    file = discord.File("bg_announcement.png", filename="bq_announcement.png")
+    embed.set_image(url="attachment://bq_announcement.png")
+    await ctx.send(file = file, embed = embed)
 
 @client.command()
 async def safe_exit(ctx):
