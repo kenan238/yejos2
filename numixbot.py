@@ -838,6 +838,8 @@ async def batchquest(ctx, arg=None):
     embed.set_image(url="attachment://bq_announcement.png")
     await ctx.send(file = file, embed = embed)
 
+# safe exit
+@commands.is_owner()
 @client.command()
 async def safe_exit(ctx):
     await ctx.send("Begin of safe_exit")
@@ -845,5 +847,107 @@ async def safe_exit(ctx):
     await async_on_exit()
     await ctx.send("change da world, goodbye")
     await client.close()
+
+# fight
+@client.command()
+async def fight(ctx, with_: discord.Member):
+    acc = getAcc(str(ctx.message.author.id))
+    if acc == "USER_NOT_FOUND":
+        await ctx.send("can't find your account, make one using `>stats`")
+        return
+    with_acc = getAcc(str(with_.id))
+    if with_acc == "USER_NOT_FOUND":
+        await ctx.send(f"can't find {with_}'s account, make one using `>stats`")
+        return
+    hp = {
+        f"{with_.id}": 100,
+        f"{str(ctx.message.author.id)}": 100
+    }
+    doubt = ""
+    if acc["strength"] > with_acc["strength"]:
+        doubt = f"<@!{with_.id}>"
+    if acc["strength"] < with_acc["strength"]:
+        doubt = f"<@!{str(ctx.message.author.id)}>"
+    await ctx.send("STARTING FIGHT!")
+    time.sleep(0.1)
+    await ctx.send("You both have 100 HP")
+    time.sleep(0.1)
+    await ctx.send(f"Although i doubt {doubt} will win...")
+    time.sleep(0.1)
+    await ctx.send("anyways what am i talking about.")
+    time.sleep(0.1)
+    await ctx.send("3")
+    time.sleep(0.5)
+    await ctx.send("*2*")
+    time.sleep(0.5)
+    await ctx.send("***1***")
+    time.sleep(0.5)
+    await ctx.send("GO!")
+
+    for i in range(10):
+        uid = ""
+        opponent_uid = ""
+        if i % 2 == 0: 
+            uid = str(with_.id)
+            opponent_uid = str(ctx.message.author.id)
+        else:
+            uid = str(ctx.message.author.id)
+            opponent_uid = str(with_.id)
+
+        await ctx.send(f'Chose your option <@!{uid}>: [PUNCH, DEFEND, do nothing and cry in corner (alias: cry)]')
+        option = await client.wait_for('message', check=lambda message: [message.author.id == uid, print(uid)])
+        option = option.content.lower()
+
+        if option == "punch":
+            dmg = rnd.randint(5, 10)
+            await ctx.send(f"<@!{uid}> **punched** his opponent! dealt {dmg} HP!")
+            hp[opponent_uid] -= dmg
+        elif option == "defend":
+            dmg = rnd.randint(5, 10)
+            await ctx.send(f"<@!{uid}> **defended** and dodged a hit, he saved {dmg} HP, he protecc")
+        elif option == "cry" or option == "do nothing and cry in corner":
+            dmg = rnd.randint(5, 10)
+            await ctx.send(f"<@!{uid}> rn: https://cdn.discordapp.com/attachments/899207967965065286/900051887095701514/video0-10-2.mp4")
+        
+        else:
+            await ctx.send(f"{option} wasn't in the options")
+        if hp[uid] <= 0:
+            await ctx.send(f"<@!{uid}> lost f in chat")
+            return
+        if hp[opponent_uid] <= 0:
+            await ctx.send(f"<@!{opponent_uid}> lost f in chat")   
+            return     
+
+# 100% real hack
+@client.command()
+async def hack(ctx, who: discord.Member):
+    pwd = rnd.choice(["amogus4145#@#", "p@ssw0rd", "*$&*($@URNN$(", "IhaveFriendsIPromise420", f"{who.name}_pwd"])
+    email = rnd.choice([f"{who.name}_has_freidns@gmail.com", f"xx{who.name}xx@gmail.com", f"{who.name}_yt@email.com"])
+    await ctx.send(r"Beginning of 100% real hack")
+    await ctx.send(f"Hacking discord account of {who.name}")
+    await ctx.send("10%")
+    await ctx.send("27%")
+    await ctx.send("50%")
+    await ctx.send("-1%")
+    await ctx.send("90%")
+    await ctx.send(f"100% less goo")
+    await ctx.send(f"""Most recent dm: `{
+            rnd.choice(["dude the earth is flat i can prove it, also no the doctor did not say i was stupid",
+                "fartnite gud",
+                "go sub to my yt",
+                "join join join join join",
+                "can u give free bobux now"
+            ])
+        }`""")
+    await ctx.send("Installed trojan :troll:")
+    await ctx.send(f"Credentials: \n Email: `{email}`\n Password: {pwd}")
+    await ctx.send(f"Credit card number: {rnd.choice(['346137263040191', '344264969945978', '371063792884107', '340857381975269'])}")
+    await ctx.send("Selling data to government...")
+    await ctx.send("+10,000$ from fbi")
+    await ctx.send(r"the 100% real hack i promise has finished")
+
+@client.command()
+async def roulette(ctx):
+    await ctx.send(rnd.choice(["gg you alive leess goo!!!11", "you died, F"]))
 
 client.run(open("SECRET_FOLDER/token.txt", "r").read())
