@@ -1,4 +1,6 @@
 # Yejos2
+Join https://discord.gg/44NtNB9Q for more info.
+Any names referenced are members of the server above.
 **Yejos** 2.0 is a _discord bot_ based on the _old source code_ of the **Yejos Bot** leaked by Nimic Tank.
 Because the leak **wasn't the latest version** there are _commands missing_ and more stuff..
 This isn't the original leak, it's a _modified version_ as new commands were added.
