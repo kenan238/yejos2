@@ -5,7 +5,13 @@ class FileSystem:
 	def __init__(self):
 		self.mem_fs = MemFs()
 	def loadDiskToFS(self, f):
-		self.mem_fs = bytes(pickle.loads(f))
+		disk_pickled = list(f)
+		del disk_pickled[0]
+		del disk_pickled[0]
+		del disk_pickled[len (disk_pickled) - 1]
+		disk_pickled = ''.join(disk_pickled)
+		loaded = pickle.loads(disk_pickled.encode())
+		self.mem_fs = loaded
 	def saveToStr(self):
 		return str(pickle.dumps(self.mem_fs))
 
@@ -108,6 +114,7 @@ class YEGOS:
 
 		except Exception as e:
 			await ctx.send("`=======KERNEL PANIC========\nSYSTEM CRASH! DUMP: " +  str(e) + "`")
+			raise e
 		acc["laptop_disk"]["yeg_os"]["rootfs"] = self.fs.saveToStr()
 		return acc
 
@@ -140,7 +147,7 @@ class YEGOS:
 ##DEFAULT############
 ##APPS###############
 
-class Terminal(Application):
-	def __init__ (self):
-		super("Terminal")
-	def start(self, args, pid):
+# class Terminal(Application):
+# 	def __init__ (self):
+# 		super("Terminal")
+# 	def start(self, args, pid):
